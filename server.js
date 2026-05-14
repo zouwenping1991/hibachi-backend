@@ -20,8 +20,9 @@ app.post("/book", async (req, res) => {
   const { fullname, phone, email, date, time, address, guests } = req.body;
 
   const mailOptions = {
-    from: email,
-    to: "process.env.GMAIL_USER",
+    from: process.env.GMAIL_USER,
+    to: process.env.GMAIL_USER,
+    replyTo: email,
     subject: "🔥 New Hibachi Booking",
     text: `
 New Booking:
@@ -36,16 +37,17 @@ Guests: ${guests}
     `
   };
 
-  try {
+    try {
     await transporter.sendMail(mailOptions);
-    res.json({ success: true });
+    return res.json({ success: true });
   } catch (error) {
-    res.json({ success: false, error });
+    console.error("Email error:", error);
+    return res.status(500).json({ success: false, error: "Email failed" });
   }
 });
 
 const PORT = process.env.PORT || 3000;
 
 app.listen(PORT, () => {
-  console.log("Server running");
+  console.log("Server running on port " + PORT);
 });
