@@ -19,7 +19,7 @@ app.post("/book", async (req, res) => {
 
     const result = await resend.emails.send({
       from: "onboarding@resend.dev",
-      to: "wenping@southflamellc.com",
+      to: "zouwenping1991@gmail.com",
       subject: "🔥 New Hibachi Booking",
       text: `
 New Booking:
