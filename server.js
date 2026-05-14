@@ -1,41 +1,28 @@
 const express = require("express");
 const cors = require("cors");
-const nodemailer = require("nodemailer");
+const { Resend } = require("resend");
 
 const app = express();
 
 app.use(cors());
 app.use(express.json());
 
-/**
- * ✔ Microsoft 365 SMTP setup
- * :contentReference[oaicite:0]{index=0}
- */
-const transporter = nodemailer.createTransport({
-  host: "smtp.office365.com",
-  port: 587,
-  secure: false,
-  requireTLS: true,
-  auth: {
-    user: process.env.OUTLOOK_USER,
-    pass: process.env.OUTLOOK_PASS
-  }
-});
+const resend = new Resend(process.env.RESEND_API_KEY);
 
-/**
- * Booking API
- * :contentReference[oaicite:1]{index=1} will receive requests here
- */
 app.post("/book", async (req, res) => {
+  console.log("📩 Booking received:", req.body);
+
   const { fullname, phone, email, date, time, address, guests } = req.body;
 
-  const mailOptions = {
-    from: process.env.OUTLOOK_USER,
-    to: "wenping@southflamellc.com",
-    replyTo: email,
-    subject: "🔥 New Hibachi Booking Request",
-    text: `
-New Booking Request
+  try {
+    console.log("📤 Sending email via Resend...");
+
+    const result = await resend.emails.send({
+      from: "onboarding@resend.dev",
+      to: "wenping@southflamellc.com",
+      subject: "🔥 New Hibachi Booking",
+      text: `
+New Booking:
 
 Name: ${fullname}
 Phone: ${phone}
@@ -44,19 +31,15 @@ Date: ${date}
 Time: ${time}
 Address: ${address}
 Guests: ${guests}
-    `
-  };
-
-  try {
-    await transporter.sendMail(mailOptions);
-
-    return res.json({
-      success: true,
-      message: "Booking email sent successfully"
+      `
     });
 
+    console.log("✅ Email sent:", result);
+
+    return res.json({ success: true });
+
   } catch (error) {
-    console.error("Email error:", error);
+    console.error("❌ Resend error:", error);
 
     return res.status(500).json({
       success: false,
