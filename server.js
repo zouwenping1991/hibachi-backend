@@ -9,15 +9,18 @@ app.use(express.json());
 // EMAIL SETUP
 const transporter = nodemailer.createTransport({
   host: "smtp.gmail.com",
-  port: 587,
-  secure: false,
-  family: 4,
+  port: 465,
+  secure: true,
+  requireTLS: true,
+  tls: {
+    family: 4,
+    rejectUnauthorized: false
+  },
   auth: {
     user: process.env.GMAIL_USER,
     pass: process.env.GMAIL_PASS
   }
 });
-
 // BOOKING API
 app.post("/book", async (req, res) => {
   const { fullname, phone, email, date, time, address, guests } = req.body;
