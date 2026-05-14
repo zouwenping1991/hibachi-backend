@@ -15,14 +15,15 @@ app.post("/book", async (req, res) => {
   const { fullname, phone, email, date, time, address, guests } = req.body;
 
   try {
-    console.log("📤 Sending email via Resend...");
+    console.log("📤 Sending email...");
 
     const result = await resend.emails.send({
-      from: "onboarding@resend.dev",
-      to: "zouwenping1991@gmail.com",
-      subject: "🔥 New Hibachi Booking",
+      from: "Authentic Hibachi <bookings@authentichibachi.com>",
+      to: "authentichibachi@southflamellc.com",
+      replyTo: email,
+      subject: "🔥 New Hibachi Booking Request",
       text: `
-New Booking:
+New Booking Request
 
 Name: ${fullname}
 Phone: ${phone}
@@ -39,7 +40,7 @@ Guests: ${guests}
     return res.json({ success: true });
 
   } catch (error) {
-    console.error("❌ Resend error:", error);
+    console.error("❌ Email error:", error);
 
     return res.status(500).json({
       success: false,
@@ -51,5 +52,5 @@ Guests: ${guests}
 const PORT = process.env.PORT || 3000;
 
 app.listen(PORT, () => {
-  console.log("Server running on port " + PORT);
+  console.log("🚀 Server running on port " + PORT);
 });
