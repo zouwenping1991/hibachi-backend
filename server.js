@@ -1,6 +1,7 @@
 const express = require("express");
 const cors = require("cors");
 const axios = require("axios");
+const nodemailer = require("nodemailer");
 
 const app = express();
 
@@ -8,6 +9,10 @@ app.use(cors());
 app.use(express.json());
 
 const BUSINESS_ADDRESS = "Houston, TX";
+
+//////////////////////////////////////////////////////
+// Travel Fee Function
+//////////////////////////////////////////////////////
 
 function calculateTravelFee(distanceMiles) {
 
@@ -19,6 +24,29 @@ function calculateTravelFee(distanceMiles) {
 
   return "Custom Quote";
 }
+
+//////////////////////////////////////////////////////
+// Email Transporter
+//////////////////////////////////////////////////////
+
+const transporter = nodemailer.createTransport({
+
+  host: "smtp.office365.com",
+
+  port: 587,
+
+  secure: false,
+
+  auth: {
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASS
+  }
+
+});
+
+//////////////////////////////////////////////////////
+// Booking Route
+//////////////////////////////////////////////////////
 
 app.post("/book", async (req, res) => {
 
@@ -35,7 +63,10 @@ app.post("/book", async (req, res) => {
       guests
     } = req.body;
 
-    // Google Maps Distance Matrix API
+    //////////////////////////////////////////////////////
+    // Calculate Distance
+    //////////////////////////////////////////////////////
+
     const mapsRes = await axios.get(
       "https://maps.googleapis.com/maps/api/distancematrix/json",
       {
@@ -60,32 +91,104 @@ app.post("/book", async (req, res) => {
 
     }
 
-    // meters → miles
+    //////////////////////////////////////////////////////
+    // Convert meters to miles
+    //////////////////////////////////////////////////////
+
     const distanceMiles =
       (
         element.distance.value / 1609.34
       ).toFixed(1);
 
+    //////////////////////////////////////////////////////
+    // Calculate Travel Fee
+    //////////////////////////////////////////////////////
+
     const travelFee =
       calculateTravelFee(Number(distanceMiles));
 
-    // HERE you can also:
-    // send email
-    // save to database
-    // send SMS
+    //////////////////////////////////////////////////////
+    // Email to Owner
+    //////////////////////////////////////////////////////
 
-    console.log({
-      fullname,
-      email,
-      phone,
-      contact,
-      date,
-      time,
-      address,
-      guests,
-      distanceMiles,
-      travelFee
+    await transporter.sendMail({
+
+      from: process.env.EMAIL_USER,
+
+      to: process.env.OWNER_EMAIL,
+
+      subject: "New Hibachi Booking Request",
+
+      text: `
+New booking request received.
+
+Name: ${fullname}
+
+Email: ${email}
+
+Phone: ${phone}
+
+Preferred Contact: ${contact}
+
+Date: ${date}
+
+Time: ${time}
+
+Address: ${address}
+
+Guests: ${guests}
+
+Distance: ${distanceMiles} miles
+
+Travel Fee: $${travelFee}
+      `
     });
+
+    //////////////////////////////////////////////////////
+    // Confirmation Email to Guest
+    //////////////////////////////////////////////////////
+
+    await transporter.sendMail({
+
+      from: process.env.EMAIL_USER,
+
+      to: email,
+
+      subject: "We Received Your Hibachi Booking Request",
+
+      text: `
+Hi ${fullname},
+
+Thank you for your booking request!
+
+Here are your submitted booking details:
+
+Date: ${date}
+
+Time: ${time}
+
+Event Address:
+${address}
+
+Estimated Guests:
+${guests}
+
+Estimated Distance:
+${distanceMiles} miles
+
+Estimated Travel Fee:
+$${travelFee}
+
+We will review your request and contact you shortly to confirm availability.
+
+Thank you,
+Authentic Hibachi
+      `
+    });
+
+    //////////////////////////////////////////////////////
+    // Response Back to Frontend
+    //////////////////////////////////////////////////////
 
     res.json({
       success: true,
@@ -106,8 +209,12 @@ app.post("/book", async (req, res) => {
 
 });
 
+//////////////////////////////////////////////////////
+// Start Server
+//////////////////////////////////////////////////////
+
 const PORT = process.env.PORT || 3000;
 
 app.listen(PORT, () => {
-  console.log("Server running");
+  console.log("Server running on port " + PORT);
 });
