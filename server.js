@@ -1,56 +1,113 @@
 const express = require("express");
 const cors = require("cors");
-const { Resend } = require("resend");
+const axios = require("axios");
 
 const app = express();
 
 app.use(cors());
 app.use(express.json());
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+const BUSINESS_ADDRESS = "Houston, TX";
+
+function calculateTravelFee(distanceMiles) {
+
+  if (distanceMiles <= 40) return 50;
+  if (distanceMiles <= 60) return 75;
+  if (distanceMiles <= 80) return 100;
+  if (distanceMiles <= 100) return 125;
+  if (distanceMiles <= 120) return 150;
+
+  return "Custom Quote";
+}
 
 app.post("/book", async (req, res) => {
-  console.log("📩 Booking received:", req.body);
-
-  const { fullname, phone, email, date, time, address, guests } = req.body;
 
   try {
-    console.log("📤 Sending email...");
 
-    const result = await resend.emails.send({
-      from: "Authentic Hibachi <bookings@authentichibachi.com>",
-      to: "authentichibachi@southflamellc.com",
-      replyTo: email,
-      subject: "🔥 New Hibachi Booking Request",
-      text: `
-New Booking Request
+    const {
+      fullname,
+      email,
+      phone,
+      contact,
+      date,
+      time,
+      address,
+      guests
+    } = req.body;
 
-Name: ${fullname}
-Phone: ${phone}
-Email: ${email}
-Date: ${date}
-Time: ${time}
-Address: ${address}
-Guests: ${guests}
-      `
+    // Google Maps Distance Matrix API
+    const mapsRes = await axios.get(
+      "https://maps.googleapis.com/maps/api/distancematrix/json",
+      {
+        params: {
+          origins: BUSINESS_ADDRESS,
+          destinations: address,
+          units: "imperial",
+          key: process.env.GOOGLE_MAPS_API_KEY
+        }
+      }
+    );
+
+    const element =
+      mapsRes.data.rows[0].elements[0];
+
+    if (element.status !== "OK") {
+
+      return res.json({
+        success: false,
+        message: "Could not calculate distance"
+      });
+
+    }
+
+    // meters → miles
+    const distanceMiles =
+      (
+        element.distance.value / 1609.34
+      ).toFixed(1);
+
+    const travelFee =
+      calculateTravelFee(Number(distanceMiles));
+
+    // HERE you can also:
+    // send email
+    // save to database
+    // send SMS
+
+    console.log({
+      fullname,
+      email,
+      phone,
+      contact,
+      date,
+      time,
+      address,
+      guests,
+      distanceMiles,
+      travelFee
     });
 
-    console.log("✅ Email sent:", result);
+    res.json({
+      success: true,
+      distanceMiles,
+      travelFee
+    });
 
-    return res.json({ success: true });
+  } catch (err) {
 
-  } catch (error) {
-    console.error("❌ Email error:", error);
+    console.error(err);
 
-    return res.status(500).json({
+    res.json({
       success: false,
-      error: error.message
+      message: "Server error"
     });
+
   }
+
 });
 
 const PORT = process.env.PORT || 3000;
 
 app.listen(PORT, () => {
-  console.log("🚀 Server running on port " + PORT);
+  console.log("Server running");
 });
