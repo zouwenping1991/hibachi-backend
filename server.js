@@ -115,7 +115,7 @@ res.json({
 });
 
 resend.emails.send({
-  from: "Authentic Hibachi <onboarding@resend.dev>",
+  from: "Authentic Hibachi <booking@authentichibachi.com>",
   to: process.env.OWNER_EMAIL,
   subject: "New Hibachi Booking Request",
   text: bookingDetails
