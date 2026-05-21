@@ -114,24 +114,25 @@ Thank you,
 Authentic Hibachi
 `;
 
-    await transporter.sendMail({
-      from: process.env.EMAIL_USER,
-      to: process.env.OWNER_EMAIL,
-      subject: "New Hibachi Booking Request",
-      text: bookingDetails
-    });
+res.json({
+  success: true,
+  travelMessage
+});
 
-    await transporter.sendMail({
-      from: process.env.EMAIL_USER,
-      to: email,
-      subject: "We Received Your Hibachi Booking Request",
-      text: bookingDetails
-    });
+transporter.sendMail({
+  from: process.env.EMAIL_USER,
+  to: process.env.OWNER_EMAIL,
+  subject: "New Hibachi Booking Request",
+  text: bookingDetails
+}).catch(console.error);
 
-    res.json({
-      success: true,
-      travelMessage
-    });
+transporter.sendMail({
+  from: process.env.EMAIL_USER,
+  to: email,
+  subject: "We Received Your Hibachi Booking Request",
+  text: bookingDetails
+}).catch(console.error);
+
 
   } catch (err) {
     console.error(err);
