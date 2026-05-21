@@ -14,6 +14,7 @@ app.use(express.json());
 const transporter = nodemailer.createTransport({
   host: "smtp.office365.com",
   port: 587,
+  family: 4,
   secure: false,
   auth: {
     user: process.env.EMAIL_USER,
