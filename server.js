@@ -1,8 +1,11 @@
 const express = require("express");
 const cors = require("cors");
-const nodemailer = require("nodemailer");
 
 const app = express();
+
+const { Resend } = require("resend");
+
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 app.use(cors());
 app.use(express.json());
@@ -11,16 +14,6 @@ app.use(express.json());
 // Email Transporter
 //////////////////////////////////////////////////////
 
-const transporter = nodemailer.createTransport({
-  host: "smtp.office365.com",
-  port: 587,
-  family: 4,
-  secure: false,
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS
-  }
-});
 
 //////////////////////////////////////////////////////
 // Booking Route
@@ -121,31 +114,33 @@ res.json({
   travelMessage
 });
 
-transporter.sendMail({
-  from: process.env.EMAIL_USER,
+resend.emails.send({
+  from: "Authentic Hibachi <onboarding@resend.dev>",
   to: process.env.OWNER_EMAIL,
   subject: "New Hibachi Booking Request",
   text: bookingDetails
 })
 .then(() => {
-  console.log("Owner email sent successfully");
+  console.log("Owner email sent successfully via Resend");
 })
 .catch((err) => {
-  console.error("Owner email failed:", err);
+  console.error("Owner email failed via Resend:", err);
 });
 
-} catch (err) {
 
-  console.error("Server error:", err);
+ } catch (err) {
 
-  res.json({
-    success: false,
-    message: "Server error"
-  });
+    console.error("Server error:", err);
 
-}
+    res.json({
+      success: false,
+      message: "Server error"
+    });
+
+  }
 
 });
+
 //////////////////////////////////////////////////////
 // Start Server
 //////////////////////////////////////////////////////
