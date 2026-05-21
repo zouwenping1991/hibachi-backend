@@ -8,7 +8,7 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-const BUSINESS_ADDRESS = "Houston, TX";
+const BUSINESS_ADDRESS = "4002 Woodhaven St, Houston, TX, 77025";
 
 //////////////////////////////////////////////////////
 // Travel Fee Function
@@ -47,11 +47,10 @@ const transporter = nodemailer.createTransport({
 //////////////////////////////////////////////////////
 // Booking Route
 //////////////////////////////////////////////////////
-
 app.post("/book", async (req, res) => {
 
   try {
-
+       
     const {
       fullname,
       email,
@@ -59,53 +58,79 @@ app.post("/book", async (req, res) => {
       contact,
       date,
       time,
-      address,
-      guests
+
+      state,
+      city,
+      streetAddress,
+      zipcode,
+
+      adults,
+      kids,
+
+      foodOrder,
+      foodAllergies,
+      addons,
+      specialInstructions,
+      promoCode,
+      hearAboutUs,
+      agreePolicy,
+      agreeTerms,
+      agreeTravelPolicy
     } = req.body;
 
+    const fullEventAddress =
+      `${streetAddress}, ${city}, ${state} ${zipcode}`;
     //////////////////////////////////////////////////////
-    // Calculate Distance
-    //////////////////////////////////////////////////////
+//////////////////////////////////////////////////////
+// Calculate Distance
+//////////////////////////////////////////////////////
 
-    const mapsRes = await axios.get(
-      "https://maps.googleapis.com/maps/api/distancematrix/json",
-      {
-        params: {
-          origins: BUSINESS_ADDRESS,
-          destinations: address,
-          units: "imperial",
-          key: process.env.GOOGLE_MAPS_API_KEY
-        }
-      }
-    );
-
-    const element =
-      mapsRes.data.rows[0].elements[0];
-
-    if (element.status !== "OK") {
-
-      return res.json({
-        success: false,
-        message: "Could not calculate distance"
-      });
-
+const mapsRes = await axios.get(
+  "https://maps.googleapis.com/maps/api/distancematrix/json",
+  {
+    params: {
+      origins: BUSINESS_ADDRESS,
+      destinations: fullEventAddress,
+      units: "imperial",
+      key: process.env.GOOGLE_MAPS_API_KEY
     }
+  }
+);
 
-    //////////////////////////////////////////////////////
-    // Convert meters to miles
-    //////////////////////////////////////////////////////
+console.log("Google Distance API response:");
+console.log(JSON.stringify(mapsRes.data, null, 2));
 
-    const distanceMiles =
-      (
-        element.distance.value / 1609.34
-      ).toFixed(1);
+//////////////////////////////////////////////////////
+// Default values if distance calculation fails
+//////////////////////////////////////////////////////
 
-    //////////////////////////////////////////////////////
-    // Calculate Travel Fee
-    //////////////////////////////////////////////////////
+let distanceMiles = "Unknown";
+let travelFee = 50;
 
-    const travelFee =
-      calculateTravelFee(Number(distanceMiles));
+const element =
+  mapsRes.data?.rows?.[0]?.elements?.[0];
+
+//////////////////////////////////////////////////////
+// If Google successfully calculates distance
+//////////////////////////////////////////////////////
+
+if (element && element.status === "OK") {
+
+  distanceMiles =
+    (
+      element.distance.value / 1609.34
+    ).toFixed(1);
+
+  travelFee =
+    calculateTravelFee(Number(distanceMiles));
+
+} else {
+
+  console.log(
+    "Distance calculation failed. Using default travel fee."
+  );
+
+}
 
     //////////////////////////////////////////////////////
     // Email to Owner
@@ -123,24 +148,40 @@ app.post("/book", async (req, res) => {
 New booking request received.
 
 Name: ${fullname}
-
-Email: ${email}
-
+Address: ${fullEventAddress}
 Phone: ${phone}
-
 Preferred Contact: ${contact}
 
 Date: ${date}
-
 Time: ${time}
 
-Address: ${address}
+Adults: ${adults}
+Kids: ${kids}
 
-Guests: ${guests}
+Food Order:
+${foodOrder}
 
-Distance: ${distanceMiles} miles
+Add-Ons:
+${addons || "None"}
 
-Travel Fee: $${travelFee}
+Food Allergies:
+${foodAllergies || "None"}
+
+Estimated Travel Fee:
+$${travelFee}
+
+Special Instructions:
+${specialInstructions}
+
+Promotion Code:
+${promoCode || "None"}
+
+How did you hear about us?
+${hearAboutUs}
+
+Agreed to Cancellation & Weather Policy: ${agreePolicy ? "Agreed" : "Not agreed"}
+Agreed to Terms: ${agreeTerms ? "Agreed" : "Not agreed"}
+Agreed to Travel Policy: ${agreeTravelPolicy ? "Agreed" : "Not agreed"}
       `
     });
 
@@ -162,24 +203,49 @@ Hi ${fullname},
 Thank you for your booking request!
 
 Here are your submitted booking details:
+Event Address:
+${fullEventAddress}
 
 Date: ${date}
-
 Time: ${time}
 
-Event Address:
-${address}
+Phone: ${phone}
+Preferred Contact: ${contact}
 
-Estimated Guests:
-${guests}
+Adults: ${adults}
+Kids: ${kids}
+
+Food Order:
+${foodOrder}
+Optional Add-Ons:
+${addons || "None"}
+
+Food Allergies / Dietary Restrictions:
+${foodAllergies || "None"}
+
+Special Instructions:
+${specialInstructions}
+
+Promotion Code:
+${promoCode || "None"}
 
 Estimated Distance:
-${distanceMiles} miles
+${distanceMiles === "Unknown"
+  ? "Could not calculate"
+  : distanceMiles + " miles"}
 
 Estimated Travel Fee:
 $${travelFee}
 
-We will review your request and contact you shortly to confirm availability.
+How did you hear about us?
+${hearAboutUs}
+
+Agreement Status:
+Cancellation & Weather Policy: ${agreePolicy ? "Agreed" : "Not agreed"}
+Terms & Conditions: ${agreeTerms ? "Agreed" : "Not agreed"}
+Travel Fee Policy: ${agreeTravelPolicy ? "Agreed" : "Not agreed"}
+
+Please note: This is a booking request, not a final confirmation. We will review availability and contact you shortly.
 
 Thank you,
 Authentic Hibachi
