@@ -127,6 +127,29 @@ resend.emails.send({
   console.error("Owner email failed via Resend:", err);
 });
 
+resend.emails.send({
+  from: "Authentic Hibachi <booking@authentichibachi.com>",
+  to: email,
+  subject: "We Received Your Booking Request",
+  text: `
+Hi ${fullname},
+
+Your booking request was submitted successfully.
+
+We will contact you shortly to confirm availability.
+
+Below are your submitted booking details:
+
+${bookingDetails}
+`
+})
+.then(() => {
+  console.log("Guest email sent successfully via Resend");
+})
+.catch((err) => {
+  console.error("Guest email failed via Resend:", err);
+});
+
 
  } catch (err) {
 
