@@ -114,6 +114,7 @@ Thank you,
 Authentic Hibachi
 `;
 
+
 res.json({
   success: true,
   travelMessage
@@ -124,18 +125,24 @@ transporter.sendMail({
   to: process.env.OWNER_EMAIL,
   subject: "New Hibachi Booking Request",
   text: bookingDetails
-}).catch(console.error);
+})
+.then(() => {
+  console.log("Owner email sent successfully");
+})
+.catch((err) => {
+  console.error("Owner email failed:", err);
+});
 
 } catch (err) {
 
-    console.error(err);
+  console.error("Server error:", err);
 
-    res.json({
-      success: false,
-      message: "Server error"
-    });
+  res.json({
+    success: false,
+    message: "Server error"
+  });
 
-  }
+}
 
 });
 //////////////////////////////////////////////////////
