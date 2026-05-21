@@ -15,7 +15,6 @@ const transporter = nodemailer.createTransport({
   host: "smtp.office365.com",
   port: 587,
   secure: false,
-  family: 4,
   auth: {
     user: process.env.EMAIL_USER,
     pass: process.env.EMAIL_PASS
@@ -66,7 +65,7 @@ app.post("/book", async (req, res) => {
         "Travel fee will be adjusted based on your location.";
     }
 
-    const bookingDetails = `
+const bookingDetails = `
 New hibachi booking request received.
 
 Name: ${fullname}
@@ -115,24 +114,17 @@ Thank you,
 Authentic Hibachi
 `;
 
-await transporter.sendMail({
-  from: process.env.EMAIL_USER,
-  to: process.env.OWNER_EMAIL,
-  subject: "New Hibachi Booking Request",
-  text: bookingDetails
-});
-
-await transporter.sendMail({
-  from: process.env.EMAIL_USER,
-  to: email,
-  subject: "We Received Your Hibachi Booking Request",
-  text: bookingDetails
-});
-
 res.json({
   success: true,
   travelMessage
 });
+
+transporter.sendMail({
+  from: process.env.EMAIL_USER,
+  to: process.env.OWNER_EMAIL,
+  subject: "New Hibachi Booking Request",
+  text: bookingDetails
+}).catch(console.error);
 
 } catch (err) {
 
