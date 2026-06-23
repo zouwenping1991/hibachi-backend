@@ -44,23 +44,10 @@ app.post("/book", async (req, res) => {
       agreeTerms,
       agreeTravelPolicy,
 
-      paypalOrderID,
-      paypalPayerName,
-      paypalPayerEmail,
-      depositPaid,
-      depositAmount
     } = req.body;
 
     const fullEventAddress =
       `${streetAddress}, ${city}, ${state} ${zipcode}`;
-
-    // SECURITY CHECK: require PayPal deposit before booking email
-    if (depositPaid !== "Yes" || !paypalOrderID) {
-       return res.json({
-        success: false,
-        message: "Deposit payment is required before submitting booking."
-     });
-    }
 
       
     //////////////////////////////////////////////////////
@@ -118,22 +105,10 @@ Terms & Conditions: ${agreeTerms ? "Agreed" : "Not agreed"}
 Travel Fee Policy: ${agreeTravelPolicy ? "Agreed" : "Not agreed"}
 
 ========================
-PAYPAL DEPOSIT INFORMATION
+BOOKING SUBMISSION INFORMATION
 ========================
 
-Deposit Paid: ${depositPaid || "No"}
-Deposit Amount: ${depositAmount || "N/A"}
-
-PayPal Order ID:
-${paypalOrderID || "N/A"}
-
-PayPal Payer Name:
-${paypalPayerName || "N/A"}
-
-PayPal Payer Email:
-${paypalPayerEmail || "N/A"}
-
-Please note: This is a booking request, not a final confirmation. We will review availability and contact you shortly.
+Submitted by normal Confirm Appointment button.
 
 Thank you,
 Authentic Hibachi
